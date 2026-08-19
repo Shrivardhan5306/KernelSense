@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from backend.routes import cpu
 from backend.routes import memory
+from backend.routes import storage
 
 
 app = FastAPI(
@@ -34,5 +35,10 @@ app.include_router(
 
 app.include_router(
     memory.router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    storage.router,
     prefix="/api/v1"
 )
