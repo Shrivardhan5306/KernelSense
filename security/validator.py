@@ -36,8 +36,7 @@ CRITICAL_COMMANDS = {
 
 def validate_command(command):
     """
-    Classify a Linux command according to the KernelSense
-    security policy.
+    Validate command name and arguments.
     """
 
     if not command:
@@ -50,6 +49,7 @@ def validate_command(command):
 
     executable = command[0]
 
+    # Always block explicitly dangerous commands.
     if executable in CRITICAL_COMMANDS:
         return {
             "allowed": False,
@@ -58,6 +58,7 @@ def validate_command(command):
             "reason": "Critical command is blocked"
         }
 
+    # Medium-risk commands require user approval.
     if executable in MEDIUM_COMMANDS:
         return {
             "allowed": False,
@@ -66,17 +67,40 @@ def validate_command(command):
             "reason": "User approval is required"
         }
 
-    if executable in SAFE_COMMANDS:
+    # Unknown commands are denied by default.
+    if executable not in SAFE_COMMANDS:
         return {
-            "allowed": True,
+            "allowed": False,
             "requires_approval": False,
-            "risk": "safe",
-            "reason": "Command is in the safe allowlist"
+            "risk": "unknown",
+            "reason": "Command is not in the allowlist"
         }
 
+    # Basic argument validation.
+    dangerous_arguments = {
+        "|",
+        "||",
+        "&&",
+        ";",
+        ">",
+        ">>",
+        "<",
+        "$(",
+        "`",
+    }
+
+    for argument in command[1:]:
+        if argument in dangerous_arguments:
+            return {
+                "allowed": False,
+                "requires_approval": False,
+                "risk": "critical",
+                "reason": "Shell control argument is blocked"
+            }
+
     return {
-        "allowed": False,
+        "allowed": True,
         "requires_approval": False,
-        "risk": "unknown",
-        "reason": "Command is not in the allowlist"
+        "risk": "safe",
+        "reason": "Command and arguments passed validation"
     }
