@@ -6,6 +6,7 @@ from backend.routes import storage
 from backend.routes import process
 from backend.routes import network
 from backend.routes import files
+from backend.routes import logs
 
 
 app = FastAPI(
@@ -58,5 +59,10 @@ app.include_router(
 
 app.include_router(
     files.router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    logs.router,
     prefix="/api/v1"
 )
