@@ -1,36 +1,68 @@
 from pathlib import Path
 
+from security.path_validator import validate_path
+
 
 def get_file_info(file_path):
     """Return information about a file."""
-    path = Path(file_path)
+
+    validation = validate_path(file_path)
+
+    if not validation["allowed"]:
+        return {
+            "success": False,
+            "error": validation["reason"]
+        }
+
+    path = Path(validation["path"])
 
     if not path.exists():
-        return None
+        return {
+            "success": False,
+            "error": "File or directory does not exist"
+        }
 
     try:
         stat = path.stat()
 
         return {
+            "success": True,
             "name": path.name,
-            "path": str(path.absolute()),
+            "path": str(path),
             "size_bytes": stat.st_size,
             "is_file": path.is_file(),
             "is_directory": path.is_dir(),
             "modified_time": stat.st_mtime
         }
 
-    except (PermissionError, OSError):
-        return None
+    except (PermissionError, OSError) as error:
+        return {
+            "success": False,
+            "error": str(error)
+        }
 
 
 def search_files(directory, filename):
     """Search for files matching a filename."""
-    directory = Path(directory)
+
+    validation = validate_path(directory)
+
+    if not validation["allowed"]:
+        return {
+            "success": False,
+            "error": validation["reason"],
+            "results": []
+        }
+
+    directory = Path(validation["path"])
     results = []
 
     if not directory.exists() or not directory.is_dir():
-        return results
+        return {
+            "success": False,
+            "error": "Directory does not exist",
+            "results": []
+        }
 
     try:
         for path in directory.rglob(filename):
@@ -40,19 +72,41 @@ def search_files(directory, filename):
             except (PermissionError, OSError):
                 continue
 
-    except (PermissionError, OSError):
-        pass
+    except (PermissionError, OSError) as error:
+        return {
+            "success": False,
+            "error": str(error),
+            "results": []
+        }
 
-    return results
+    return {
+        "success": True,
+        "error": None,
+        "results": results
+    }
 
 
 def find_large_files(directory, min_size_mb=100):
     """Find files larger than the specified size."""
-    directory = Path(directory)
+
+    validation = validate_path(directory)
+
+    if not validation["allowed"]:
+        return {
+            "success": False,
+            "error": validation["reason"],
+            "results": []
+        }
+
+    directory = Path(validation["path"])
     results = []
 
     if not directory.exists() or not directory.is_dir():
-        return results
+        return {
+            "success": False,
+            "error": "Directory does not exist",
+            "results": []
+        }
 
     min_size_bytes = min_size_mb * 1024 * 1024
 
@@ -72,23 +126,43 @@ def find_large_files(directory, min_size_mb=100):
             except (PermissionError, OSError):
                 continue
 
-    except (PermissionError, OSError):
-        pass
+    except (PermissionError, OSError) as error:
+        return {
+            "success": False,
+            "error": str(error),
+            "results": []
+        }
 
     results.sort(
         key=lambda file: file["size_bytes"],
         reverse=True
     )
 
-    return results
+    return {
+        "success": True,
+        "error": None,
+        "results": results
+    }
 
 
 def get_directory_info(directory):
     """Return basic information about a directory."""
-    directory = Path(directory)
+
+    validation = validate_path(directory)
+
+    if not validation["allowed"]:
+        return {
+            "success": False,
+            "error": validation["reason"]
+        }
+
+    directory = Path(validation["path"])
 
     if not directory.exists() or not directory.is_dir():
-        return None
+        return {
+            "success": False,
+            "error": "Directory does not exist"
+        }
 
     try:
         files = 0
@@ -104,10 +178,14 @@ def get_directory_info(directory):
                 continue
 
         return {
-            "path": str(directory.absolute()),
+            "success": True,
+            "path": str(directory),
             "files": files,
             "directories": directories
         }
 
-    except (PermissionError, OSError):
-        return None
+    except (PermissionError, OSError) as error:
+        return {
+            "success": False,
+            "error": str(error)
+        }
