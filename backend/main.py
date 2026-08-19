@@ -1,12 +1,14 @@
 from fastapi import FastAPI
+
 from backend.routes import cpu
+from backend.routes import memory
+
 
 app = FastAPI(
     title="KernelSense API",
     description="Linux system monitoring and diagnostics backend",
     version="1.0.0"
 )
-app.include_router(cpu.router, prefix="/api/v1")
 
 
 @app.get("/")
@@ -23,3 +25,14 @@ def health():
     return {
         "status": "healthy"
     }
+
+
+app.include_router(
+    cpu.router,
+    prefix="/api/v1"
+)
+
+app.include_router(
+    memory.router,
+    prefix="/api/v1"
+)
