@@ -20,12 +20,23 @@ def execute_linux_command(request: CommandRequest):
 
     validation = validate_command(request.command)
 
+    if validation["requires_approval"]:
+        return {
+            "success": False,
+            "command": request.command,
+            "risk": validation["risk"],
+            "blocked": False,
+            "requires_approval": True,
+            "reason": validation["reason"]
+        }
+
     if not validation["allowed"]:
         return {
             "success": False,
             "command": request.command,
             "risk": validation["risk"],
             "blocked": True,
+            "requires_approval": False,
             "reason": validation["reason"]
         }
 
@@ -35,5 +46,6 @@ def execute_linux_command(request: CommandRequest):
         **result,
         "risk": validation["risk"],
         "blocked": False,
+        "requires_approval": False,
         "validation_reason": validation["reason"]
     }
